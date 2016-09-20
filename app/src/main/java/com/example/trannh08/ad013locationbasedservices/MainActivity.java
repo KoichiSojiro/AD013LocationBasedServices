@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
             textView_addressGps.setText(getCurrentAddress(locationGps));
         } else {
             textView_locationGps.setText("Cannot detect location using GPS service.");
-            textView_locationGps.setText(getCurrentAddress(locationGps));
+            textView_addressGps.setText(getCurrentAddress(locationGps));
         }
 
         Location locationNetwork = getCurrentLocation(LocationManager.NETWORK_PROVIDER);
@@ -250,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
                 return "Service error.";
             }
         } else {
-            return "Cannot get the address.";
+            return "Address: Cannot get the address.";
         }
     }
 }
