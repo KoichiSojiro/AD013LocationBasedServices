@@ -1,11 +1,9 @@
 package com.example.trannh08.ad013locationbasedservices;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Address;
-import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
@@ -21,6 +19,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
@@ -37,8 +36,12 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private final String DEBUG_TAG = "DEBUG TAG";
-    private TextView textView_address;
-    private TextView textView_location;
+    private TextView textView_addressGps;
+    private TextView textView_locationGps;
+    private TextView textView_addressNetwork;
+    private TextView textView_locationNetwork;
+    private TextView textView_addressBestAccuracy;
+    private TextView textView_locationBestAccuracy;
     private Button button_getLocation;
 
     @Override
@@ -48,8 +51,12 @@ public class MainActivity extends AppCompatActivity {
         boolean isLocationServiceOn = checkLocationServices();
         if (!isLocationServiceOn) askForLocationServices();
 
-        textView_location = (TextView) findViewById(R.id.textView_location);
-        textView_address = (TextView) findViewById(R.id.textView_address);
+        textView_locationGps = (TextView) findViewById(R.id.textView_locationGps);
+        textView_addressGps = (TextView) findViewById(R.id.textView_addressGps);
+        textView_locationNetwork = (TextView) findViewById(R.id.textView_locationNetwork);
+        textView_addressNetwork = (TextView) findViewById(R.id.textView_addressNetwork);
+        textView_locationBestAccuracy = (TextView) findViewById(R.id.textView_locationBestAccuracy);
+        textView_addressBestAccuracy = (TextView) findViewById(R.id.textView_addressBestAccuracy);
 
         button_getLocation = (Button) findViewById(R.id.button_getLocation);
         button_getLocation.setOnClickListener(new View.OnClickListener() {
@@ -62,80 +69,188 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "ACCESS_FINE_LOCATION is OK", Toast.LENGTH_SHORT).show();
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "ACCESS_COARSE_LOCATION is OK", Toast.LENGTH_SHORT).show();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "ACCESS_FINE_LOCATION permission granted!", Toast.LENGTH_SHORT).show();
+            }
+            if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "ACCESS_COARSE_LOCATION permission granted!", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "ACCESS_FINE_LOCATION permission granted!", Toast.LENGTH_SHORT).show();
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "ACCESS_COARSE_LOCATION permission granted!", Toast.LENGTH_SHORT).show();
+            }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     private boolean checkLocationServices() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            return true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            } else {
+                return false;
+            }
         } else {
-            return false;
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     private void askForLocationServices() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                Toast.makeText(this, "ACCESS_COARSE_LOCATION permission is needed", Toast.LENGTH_SHORT).show();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                    Toast.makeText(this, "ACCESS_COARSE_LOCATION permission is needed.", Toast.LENGTH_SHORT).show();
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PackageManager.PERMISSION_GRANTED);
+                }
             }
-            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PackageManager.PERMISSION_GRANTED);
-        }
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                Toast.makeText(this, "ACCESS_FINE_LOCATION permission is needed", Toast.LENGTH_SHORT).show();
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    Toast.makeText(this, "ACCESS_FINE_LOCATION permission is needed.", Toast.LENGTH_SHORT).show();
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
+                }
             }
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
+        } else {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                    Toast.makeText(this, "ACCESS_COARSE_LOCATION permission is needed.", Toast.LENGTH_SHORT).show();
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PackageManager.PERMISSION_GRANTED);
+                }
+            }
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    Toast.makeText(this, "ACCESS_FINE_LOCATION permission is needed.", Toast.LENGTH_SHORT).show();
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
+                }
+            }
         }
     }
 
     public void displayCurrentLocation() {
+        Location locationGps = getCurrentLocation(LocationManager.GPS_PROVIDER);
+        if (locationGps != null) {
+            textView_locationGps.setText("Using GPS: " + locationGps.toString());
+            textView_addressGps.setText(getCurrentAddress(locationGps));
+        } else {
+            textView_locationGps.setText("Cannot detect location using GPS service.");
+            textView_locationGps.setText(getCurrentAddress(locationGps));
+        }
+
+        Location locationNetwork = getCurrentLocation(LocationManager.NETWORK_PROVIDER);
+        if (locationNetwork != null) {
+            textView_locationNetwork.setText("Using Network: " + locationNetwork.toString());
+            textView_addressNetwork.setText(getCurrentAddress(locationNetwork));
+        } else {
+            textView_locationNetwork.setText("Cannot detect location using Network service.");
+            textView_addressNetwork.setText(getCurrentAddress(locationNetwork));
+        }
+
+        Location locationBetterAccuracy = getBetterLocation(locationGps, locationNetwork);
+        if (locationBetterAccuracy != null) {
+            textView_locationBestAccuracy.setText("Best Accuracy using " + locationBetterAccuracy.getProvider().toUpperCase() + ": " + locationBetterAccuracy.toString());
+            textView_addressBestAccuracy.setText(getCurrentAddress(locationBetterAccuracy));
+        } else {
+            textView_locationBestAccuracy.setText("Cannot detect best location accuracy.");
+            textView_addressBestAccuracy.setText(getCurrentAddress(locationBetterAccuracy));
+        }
+    }
+
+    public Location getCurrentLocation(String provider) {
+        Location location = null;
         try {
-            boolean isLocationServiceOn = checkLocationServices();
-            if (isLocationServiceOn) {
-                LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                Criteria criteria = new Criteria();
-                String provider = locationManager.getBestProvider(criteria, true);
+            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    Location location = locationManager.getLastKnownLocation(provider);
-                    textView_location.setText("Raw location data: " + location.toString());
-
-                    String addressName = "";
-                    Geocoder geocoder = new Geocoder(getBaseContext(), Locale.getDefault());
-                    List<Address> addresses;
-                    try {
-                        addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                        if (addresses.size() > 0)
-                            addressName = addresses.get(0).getFeatureName();
-                        addressName += ", " + addresses.get(0).getSubLocality();
-                        addressName += ", " + addresses.get(0).getSubAdminArea();
-                        addressName += ", " + addresses.get(0).getAdminArea();
-                        addressName += ", " + addresses.get(0).getCountryName();
-
-                        textView_address.setText("Address: " + addressName);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            } else {
-                textView_address.setText("Location services were turned off.");
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                location = locationManager.getLastKnownLocation(provider);
             }
+            return location;
         } catch (Exception ex) {
-            textView_address.setText("Cannot detect current location.");
             Log.d(DEBUG_TAG, ex.getMessage());
             Log.d(DEBUG_TAG, ex.getStackTrace().toString());
+            return location;
+        }
+    }
+
+    public Location getBetterLocation(Location location01, Location location02) {
+        int TWO_MINUTES = 1000 * 60 * 2;
+
+        if(location01 == null) {
+            return location02;
+        } else {
+            long timeDelta = location01.getTime() - location02.getTime();
+            boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
+            boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
+            boolean isNewer = timeDelta > 0;
+
+            // Check whether the new location fix is more or less accurate
+            int accuracyDelta = (int) (location01.getAccuracy() - location02.getAccuracy());
+            boolean isLessAccurate = accuracyDelta > 0;
+            boolean isMoreAccurate = accuracyDelta < 0;
+            boolean isSignificantlyLessAccurate = accuracyDelta > 200;
+
+            // Check if the old and new location are from the same provider
+            boolean isFromSameProvider;
+            if(location01.getProvider() == null && location02.getProvider() == null
+                    || location01.getProvider().equals(location02.getProvider())) {
+                isFromSameProvider = true;
+            } else {
+                isFromSameProvider = false;
+            }
+
+            if(isSignificantlyNewer) {
+                return location01;
+            } else if(isSignificantlyOlder) {
+                return location02;
+            } else {
+                // Determine location quality using a combination of timeliness and accuracy
+                if (isMoreAccurate
+                        || isNewer && !isLessAccurate
+                        || isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
+                    return location01;
+                } else {
+                    return location02;
+                }
+            }
+        }
+    }
+
+    public String getCurrentAddress(Location location) {
+        if (location != null) {
+            String address = "";
+            Geocoder geocoder = new Geocoder(getBaseContext(), Locale.getDefault());
+            List<Address> addresses;
+            try {
+                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                if (addresses.size() > 0)
+                    address = addresses.get(0).getFeatureName();
+                address += ", " + addresses.get(0).getSubLocality();
+                address += ", " + addresses.get(0).getSubAdminArea();
+                address += ", " + addresses.get(0).getAdminArea();
+                address += ", " + addresses.get(0).getCountryName();
+
+                return "Address: " + address;
+            } catch (IOException ex) {
+                return "Cannot parse location data right now.";
+            } catch (Exception ex) {
+                return "Service error.";
+            }
+        } else {
+            return "Cannot get the address.";
         }
     }
 }
